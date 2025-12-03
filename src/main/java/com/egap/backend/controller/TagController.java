@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.cache.annotation.Cacheable;
 
 import java.util.*;
 
@@ -13,9 +14,11 @@ import java.util.*;
 @RequestMapping("/api")
 public class TagController {
     private final TagRepository tagRepository;
+    private final com.egap.backend.repo.EnterpriseTagRepository enterpriseTagRepository;
 
-    public TagController(TagRepository tagRepository) {
+    public TagController(TagRepository tagRepository, com.egap.backend.repo.EnterpriseTagRepository enterpriseTagRepository) {
         this.tagRepository = tagRepository;
+        this.enterpriseTagRepository = enterpriseTagRepository;
     }
 
     @GetMapping("/tags")
@@ -38,9 +41,10 @@ public class TagController {
     public Map<String, Object> getTagDistribution() {
         List<Map<String, Object>> rows = new ArrayList<>();
         for (Tag t : tagRepository.findAll()) {
+            int value = Optional.ofNullable(t.getVal()).orElse(0);
             rows.add(Map.of(
                     "name", t.getName(),
-                    "value", Optional.ofNullable(t.getVal()).orElse(0)
+                    "value", value
             ));
         }
         return Map.of("rows", rows);

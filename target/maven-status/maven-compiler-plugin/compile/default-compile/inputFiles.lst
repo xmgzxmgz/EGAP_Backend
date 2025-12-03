@@ -1,13 +1,17 @@
 /Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/controller/HealthController.java
 /Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/controller/TagController.java
+/Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/model/EnterpriseTag.java
 /Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/controller/ModelingController.java
 /Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/model/EnterpriseInfo.java
 /Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/model/Tag.java
 /Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/config/MetricsFilter.java
+/Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/config/RedisConfig.java
 /Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/repo/EnterpriseInfoRepository.java
 /Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/config/WebConfig.java
 /Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/EgapBackendApplication.java
 /Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/repo/TagRepository.java
 /Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/controller/EnterpriseController.java
+/Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/model/EnterpriseTagId.java
+/Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/repo/EnterpriseTagRepository.java
 /Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/config/GlobalExceptionHandler.java
 /Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/controller/SearchController.java

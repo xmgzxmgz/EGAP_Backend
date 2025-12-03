@@ -1,4 +1,6 @@
 com/egap/backend/config/MetricsFilter.class
+com/egap/backend/config/RedisConfig.class
+com/egap/backend/model/EnterpriseTagId.class
 com/egap/backend/repo/EnterpriseInfoRepository.class
 com/egap/backend/controller/TagController.class
 com/egap/backend/model/EnterpriseInfo.class
@@ -6,8 +8,11 @@ com/egap/backend/config/WebConfig.class
 com/egap/backend/repo/TagRepository.class
 com/egap/backend/model/Tag.class
 com/egap/backend/controller/ModelingController.class
+com/egap/backend/config/RedisConfig$1.class
 com/egap/backend/controller/HealthController.class
 com/egap/backend/config/GlobalExceptionHandler.class
+com/egap/backend/model/EnterpriseTag.class
+com/egap/backend/repo/EnterpriseTagRepository.class
 com/egap/backend/controller/EnterpriseController.class
 com/egap/backend/controller/SearchController.class
 com/egap/backend/EgapBackendApplication.class
