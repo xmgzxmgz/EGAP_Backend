@@ -11,10 +11,12 @@ import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.cache.interceptor.CacheErrorHandler;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 
 import java.time.Duration;
 
 @Configuration
+@ConditionalOnBean(RedisConnectionFactory.class)
 public class RedisConfig {
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory factory) {

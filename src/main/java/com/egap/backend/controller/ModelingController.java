@@ -21,6 +21,19 @@ public class ModelingController {
     public Map<String, Object> getModelTraining() {
         List<Double> auc = List.of(0.72, 0.76, 0.81, 0.85, 0.88, 0.90);
         List<Double> loss = List.of(0.62, 0.55, 0.46, 0.38, 0.30, 0.25);
-        return Map.of("auc", auc, "loss", loss);
+        return Map.of(
+                "auc", auc,
+                "loss", loss,
+                "progress", 78,
+                "epoch", 6
+        );
+    }
+
+    @GetMapping("/modeling/prep")
+    public Map<String, Object> getModelPrep() {
+        return Map.of(
+                "status", "ready",
+                "features", List.of("etps_name", "area_id", "risk")
+        );
     }
 }
