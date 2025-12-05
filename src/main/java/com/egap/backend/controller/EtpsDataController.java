@@ -31,7 +31,7 @@ public class EtpsDataController {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    @GetMapping("/etps-data")
+    @GetMapping("/dual_use_items")
     public Map<String, Object> getEtpsData(@RequestParam(value = "page", defaultValue = "0") int page,
                                            @RequestParam(value = "size", defaultValue = "20") int size,
                                            @RequestParam(value = "q", required = false) String q,
@@ -121,7 +121,7 @@ public class EtpsDataController {
         }
     }
 
-    @GetMapping("/etps-data/all")
+    @GetMapping("/dual_use_items/all")
     public Map<String, Object> getAllEtpsData(@RequestParam(value = "q", required = false) String q) {
         Map<String, Object> result = new HashMap<>();
         try {
