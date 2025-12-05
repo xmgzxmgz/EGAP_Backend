@@ -6,6 +6,7 @@ com/egap/backend/model/Tag.class
 com/egap/backend/controller/ModelingController.class
 com/egap/backend/controller/HealthController.class
 com/egap/backend/config/GlobalExceptionHandler.class
+com/egap/backend/controller/TuningModelController.class
 com/egap/backend/repo/EnterpriseTagRepository.class
 com/egap/backend/controller/EnterpriseController.class
 com/egap/backend/EgapBackendApplication.class
@@ -17,9 +18,9 @@ com/egap/backend/config/WebConfig.class
 com/egap/backend/controller/DbProbeController.class
 com/egap/backend/repo/TagRepository.class
 com/egap/backend/config/RedisConfig$1.class
-com/egap/backend/model/EtpsData.class
 com/egap/backend/repo/DualUseItemRepository.class
 com/egap/backend/controller/PolicyController.class
-com/egap/backend/repo/EtpsDataRepository.class
+com/egap/backend/model/TuningModel.class
+com/egap/backend/repo/TuningModelRepository.class
 com/egap/backend/model/EnterpriseTag.class
 com/egap/backend/controller/SearchController.class
