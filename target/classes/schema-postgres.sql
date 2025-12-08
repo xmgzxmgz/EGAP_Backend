@@ -3,7 +3,11 @@ create table if not exists tags (
   id bigserial primary key,
   name text not null unique,
   description text,
-  val integer
+  val integer,
+  color text,
+  source text default 'manual',
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
 );
 
 create table if not exists enterprise_info (

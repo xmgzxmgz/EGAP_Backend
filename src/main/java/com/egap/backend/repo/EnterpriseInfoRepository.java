@@ -8,4 +8,5 @@ import java.util.List;
 public interface EnterpriseInfoRepository extends JpaRepository<EnterpriseInfo, Long> {
     List<EnterpriseInfo> findByCategoryIgnoreCase(String category);
     List<EnterpriseInfo> findByNameContainingIgnoreCase(String name);
+    java.util.Optional<EnterpriseInfo> findFirstByNameIgnoreCase(String name);
 }

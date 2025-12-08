@@ -41,5 +41,21 @@ public class TuningModelSchemaInit {
                     "  end if;\n" +
                     "end $$;");
         } catch (Exception ignored) {}
+
+        try {
+            jdbc.execute("create table if not exists tag_relations (" +
+                    "id bigserial primary key," +
+                    "item_id bigint," +
+                    "enterprise_name text," +
+                    "model_id bigint," +
+                    "model_name text," +
+                    "tag text," +
+                    "applied_at timestamptz default now()," +
+                    "tag_status text default 'active'," +
+                    "project_status text default 'archived')");
+            jdbc.execute("do $$ begin begin execute 'alter table tag_relations add constraint uniq_tag_rel unique (item_id, model_id, tag)'; exception when duplicate_object then null; end; end $$;");
+            jdbc.execute("do $$ begin begin execute 'create index if not exists idx_tag_rel_model on tag_relations(model_id)'; exception when duplicate_object then null; end; end $$;");
+            jdbc.execute("do $$ begin begin execute 'create index if not exists idx_tag_rel_item on tag_relations(item_id)'; exception when duplicate_object then null; end; end $$;");
+        } catch (Exception ignored) {}
     }
 }

@@ -5,6 +5,7 @@ import com.egap.backend.repo.TuningModelRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.time.Instant;
 import java.util.*;
@@ -19,17 +20,23 @@ public class TuningModelController {
     }
 
     @GetMapping
-    public Map<String, Object> list() {
+    public Map<String, Object> list(@RequestParam(value = "status", required = false) String status) {
         List<Map<String, Object>> rows = new ArrayList<>();
         for (TuningModel m : repo.findAll()) {
-            if (!"archived".equalsIgnoreCase(Optional.ofNullable(m.getStatus()).orElse("active"))) {
-                rows.add(Map.of(
-                        "id", m.getId(),
-                        "name", m.getName(),
-                        "creator", m.getCreator(),
-                        "created_at", Optional.ofNullable(m.getCreatedAt()).orElse(Instant.now()),
-                        "status", Optional.ofNullable(m.getStatus()).orElse("active")
-                ));
+            String s = Optional.ofNullable(m.getStatus()).orElse("active");
+            boolean include;
+            if (status == null || status.isBlank()) include = !"archived".equalsIgnoreCase(s);
+            else if ("all".equalsIgnoreCase(status)) include = true;
+            else include = s.equalsIgnoreCase(status);
+            if (include) {
+                Map<String, Object> r = new HashMap<>();
+                r.put("id", m.getId());
+                r.put("name", m.getName());
+                r.put("creator", m.getCreator());
+                r.put("created_at", Optional.ofNullable(m.getCreatedAt()).orElse(Instant.now()));
+                r.put("status", s);
+                r.put("meta", m.getMeta());
+                rows.add(r);
             }
         }
         return Map.of("rows", rows);
@@ -58,25 +65,39 @@ public class TuningModelController {
         if (name.isBlank()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new HashMap<>(Map.of("error", "name required")));
         }
-        if (repo.findByNameIgnoreCase(name).isPresent()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(new HashMap<>(Map.of("error", "name exists")));
+        Optional<TuningModel> exists = repo.findByNameIgnoreCase(name);
+        if (exists.isPresent()) {
+            Map<String, Object> r = new HashMap<>();
+            r.put("error", "name exists");
+            r.put("id", exists.get().getId());
+            r.put("status", Optional.ofNullable(exists.get().getStatus()).orElse("archived"));
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(r);
         }
         TuningModel m = new TuningModel();
         m.setName(name);
         m.setCreator(creator);
         m.setCreatedAt(Instant.now());
-        m.setStatus("active");
-        m.setMeta((String) body.get("meta"));
+        m.setStatus(Optional.ofNullable((String) body.get("status")).orElse("archived"));
+        try {
+            Object metaObj = body.get("meta");
+            if (metaObj instanceof Map) {
+                m.setMeta((Map<String, Object>) metaObj);
+            } else if (metaObj instanceof String) {
+                Map<String, Object> parsed = new ObjectMapper().readValue((String) metaObj, Map.class);
+                m.setMeta(parsed);
+            }
+        } catch (Exception ignored) {}
         m = repo.save(m);
         Map<String, Object> r = new HashMap<>();
         r.put("id", m.getId());
         r.put("name", m.getName());
         r.put("creator", m.getCreator());
         r.put("created_at", m.getCreatedAt());
+        r.put("status", m.getStatus());
         return ResponseEntity.ok(r);
     }
 
-    @PutMapping("/{idOrName}")
+    @PutMapping("/{idOrName}/rename")
     public ResponseEntity<Map<String, Object>> rename(@PathVariable("idOrName") String idOrName,
                                                       @RequestBody Map<String, Object> body) {
         String newName = Optional.ofNullable((String) body.get("name")).orElse("").trim();
@@ -117,6 +138,49 @@ public class TuningModelController {
             repo.save(m);
             Map<String, Object> r = new HashMap<>();
             r.put("ok", Boolean.TRUE);
+            return ResponseEntity.ok(r);
+        }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(new HashMap<>(Map.of("error", "not found"))));
+    }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<Map<String, Object>> updateStatus(@PathVariable("id") Long id,
+                                                            @RequestBody Map<String, Object> body) {
+        String status = Optional.ofNullable((String) body.get("status")).orElse("").trim();
+        if (status.isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new HashMap<>(Map.of("error", "status required")));
+        }
+        return repo.findById(id).map(m -> {
+            m.setStatus(status);
+            repo.save(m);
+            Map<String, Object> r = new HashMap<>();
+            r.put("ok", Boolean.TRUE);
+            return ResponseEntity.ok(r);
+        }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(new HashMap<>(Map.of("error", "not found"))));
+    }
+    @PutMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> updateMeta(@PathVariable("id") Long id,
+                                                          @RequestBody Map<String, Object> body) {
+        return repo.findById(id).map(m -> {
+            if (body.containsKey("meta")) {
+                try {
+                    Object metaObj = body.get("meta");
+                    if (metaObj instanceof Map) {
+                        m.setMeta((Map<String, Object>) metaObj);
+                    } else if (metaObj instanceof String) {
+                        Map<String, Object> parsed = new ObjectMapper().readValue((String) metaObj, Map.class);
+                        m.setMeta(parsed);
+                    }
+                } catch (Exception ignored) {}
+            }
+            if (body.containsKey("status")) {
+                String s = Optional.ofNullable((String) body.get("status")).orElse("").trim();
+                if (!s.isBlank()) m.setStatus(s);
+            }
+            repo.save(m);
+            Map<String, Object> r = new HashMap<>();
+            r.put("ok", Boolean.TRUE);
+            r.put("id", m.getId());
+            r.put("status", m.getStatus());
             return ResponseEntity.ok(r);
         }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(new HashMap<>(Map.of("error", "not found"))));
     }
