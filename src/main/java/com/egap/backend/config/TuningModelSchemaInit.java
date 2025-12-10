@@ -22,8 +22,29 @@ public class TuningModelSchemaInit {
                     "creator text," +
                     "created_at timestamptz default now()," +
                     "status text," +
-                    "meta text)"
+                    "meta jsonb default '{}'::jsonb)"
             );
+            jdbc.execute("do $$ begin\n" +
+                    "  if exists (select 1 from information_schema.columns where table_schema='public' and table_name='tuning_models' and column_name='meta' and data_type='text') then\n" +
+                    "    execute 'alter table tuning_models alter column meta type jsonb using meta::jsonb';\n" +
+                    "  end if;\n" +
+                    "end $$;");
+        } catch (Exception ignored) {}
+
+        try {
+            jdbc.execute("create table if not exists dual_item_tags (" +
+                    "id bigserial primary key," +
+                    "name text not null unique," +
+                    "creator text," +
+                    "created_at timestamptz default now()," +
+                    "status text," +
+                    "meta jsonb default '{}'::jsonb)"
+            );
+            jdbc.execute("do $$ begin\n" +
+                    "  if exists (select 1 from information_schema.columns where table_schema='public' and table_name='dual_item_tags' and column_name='meta' and data_type='text') then\n" +
+                    "    execute 'alter table dual_item_tags alter column meta type jsonb using meta::jsonb';\n" +
+                    "  end if;\n" +
+                    "end $$;");
         } catch (Exception ignored) {}
 
         try {
