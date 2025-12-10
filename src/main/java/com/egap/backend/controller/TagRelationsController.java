@@ -125,35 +125,52 @@ public class TagRelationsController {
     @GetMapping("")
     public ResponseEntity<Map<String, Object>> list(
             @RequestParam(value = "enterpriseId", required = false) Long enterpriseId,
+            @RequestParam(value = "enterpriseName", required = false) String enterpriseName,
+            @RequestParam(value = "enterprise_name", required = false) String enterprise_name,
             @RequestParam(value = "page", required = false) Integer page,
+            @RequestParam(value = "pageNo", required = false) Integer pageNo,
             @RequestParam(value = "size", required = false) Integer size,
+            @RequestParam(value = "page_size", required = false) Integer page_size,
             @RequestParam(value = "startTime", required = false) Long startTime,
             @RequestParam(value = "endTime", required = false) Long endTime,
-            @RequestParam(value = "modelName", required = false) String modelName
+            @RequestParam(value = "start", required = false) Long start,
+            @RequestParam(value = "end", required = false) Long end,
+            @RequestParam(value = "modelName", required = false) String modelName,
+            @RequestParam(value = "model_name", required = false) String model_name
     ) {
-        if (enterpriseId == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "enterpriseId required"));
-        }
-        int p = page == null || page < 1 ? 1 : page;
-        int s = size == null || size < 1 ? 20 : Math.min(size, 200);
+        String ename = enterpriseName != null && !enterpriseName.isBlank() ? enterpriseName : enterprise_name;
+        int p = page != null && page > 0 ? page : (pageNo != null && pageNo > 0 ? pageNo : 1);
+        int s = size != null && size > 0 ? size : (page_size != null && page_size > 0 ? page_size : 20);
+        s = Math.min(s, 200);
         int offset = (p - 1) * s;
-        String where = " enterprise_id = ?";
+        String where;
         List<Object> params = new ArrayList<>();
-        params.add(enterpriseId);
-        if (startTime != null && endTime != null) {
-            where += " and applied_at_ms between ? and ?";
-            params.add(startTime);
-            params.add(endTime);
-        } else if (startTime != null) {
-            where += " and applied_at_ms >= ?";
-            params.add(startTime);
-        } else if (endTime != null) {
-            where += " and applied_at_ms <= ?";
-            params.add(endTime);
+        if (enterpriseId != null) {
+            where = " enterprise_id = ?";
+            params.add(enterpriseId);
+        } else if (ename != null && !ename.isBlank()) {
+            where = " lower(enterprise_name) = lower(?)";
+            params.add(ename);
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "enterprise required"));
         }
-        if (modelName != null && !modelName.isBlank()) {
+        Long st = startTime != null ? startTime : start;
+        Long et = endTime != null ? endTime : end;
+        if (st != null && et != null) {
+            where += " and applied_at_ms between ? and ?";
+            params.add(st);
+            params.add(et);
+        } else if (st != null) {
+            where += " and applied_at_ms >= ?";
+            params.add(st);
+        } else if (et != null) {
+            where += " and applied_at_ms <= ?";
+            params.add(et);
+        }
+        String mname = modelName != null && !modelName.isBlank() ? modelName : model_name;
+        if (mname != null && !mname.isBlank()) {
             where += " and lower(model_name) = lower(?)";
-            params.add(modelName);
+            params.add(mname);
         }
         Long total = jdbc.queryForObject("select count(*) from tag_relations where" + where, Long.class, params.toArray());
         params.add(s);

@@ -11,11 +11,11 @@ import java.time.Instant;
 import java.util.*;
 
 @RestController
-@RequestMapping("/api/tuning/models")
-public class TuningModelController {
+@RequestMapping("/api/dual_item_tags")
+public class DualItemTagsController {
     private final TuningModelRepository repo;
 
-    public TuningModelController(TuningModelRepository repo) {
+    public DualItemTagsController(TuningModelRepository repo) {
         this.repo = repo;
     }
 
@@ -41,22 +41,6 @@ public class TuningModelController {
             }
         }
         return Map.of("rows", rows);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> get(@PathVariable("id") Long id) {
-        return repo.findById(id)
-                .map(m -> {
-                    Map<String, Object> r = new HashMap<>();
-                    r.put("id", m.getId());
-                    r.put("name", m.getName());
-                    r.put("creator", m.getCreator());
-                    r.put("created_at", m.getCreatedAt());
-                    r.put("status", m.getStatus());
-                    r.put("meta", m.getMeta());
-                    return ResponseEntity.ok(r);
-                })
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(new HashMap<>(Map.of("error", "not found"))));
     }
 
     @PostMapping
@@ -116,16 +100,9 @@ public class TuningModelController {
         return ResponseEntity.ok(r);
     }
 
-    @PutMapping("/{idOrName}/rename")
-    public ResponseEntity<Map<String, Object>> rename(@PathVariable("idOrName") String idOrName,
+    @PutMapping("/{idOrName}")
+    public ResponseEntity<Map<String, Object>> update(@PathVariable("idOrName") String idOrName,
                                                       @RequestBody Map<String, Object> body) {
-        String newName = Optional.ofNullable((String) body.get("name")).orElse("").trim();
-        if (newName.isBlank()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new HashMap<>(Map.of("error", "name required")));
-        }
-        if (repo.findByNameIgnoreCase(newName).isPresent()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(new HashMap<>(Map.of("error", "name exists")));
-        }
         Optional<TuningModel> target;
         try {
             Long id = Long.parseLong(idOrName);
@@ -133,53 +110,24 @@ public class TuningModelController {
         } catch (NumberFormatException e) {
             target = repo.findByNameIgnoreCase(idOrName);
         }
-        return target.map(m -> {
-            m.setName(newName);
-            repo.save(m);
+        if (target.isEmpty()) {
             Map<String, Object> r = new HashMap<>();
-            r.put("id", m.getId());
-            r.put("name", m.getName());
-            return ResponseEntity.ok(r);
-        }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(new HashMap<>(Map.of("error", "not found"))));
-    }
-
-    @DeleteMapping("/{idOrName}")
-    public ResponseEntity<Map<String, Object>> remove(@PathVariable("idOrName") String idOrName) {
-        Optional<TuningModel> target;
-        try {
-            Long id = Long.parseLong(idOrName);
-            target = repo.findById(id);
-        } catch (NumberFormatException e) {
-            target = repo.findByNameIgnoreCase(idOrName);
+            r.put("error", "not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(r);
         }
-        return target.map(m -> {
-            m.setStatus("archived");
-            repo.save(m);
-            Map<String, Object> r = new HashMap<>();
-            r.put("ok", Boolean.TRUE);
-            return ResponseEntity.ok(r);
-        }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(new HashMap<>(Map.of("error", "not found"))));
-    }
-
-    @PutMapping("/{id}/status")
-    public ResponseEntity<Map<String, Object>> updateStatus(@PathVariable("id") Long id,
-                                                            @RequestBody Map<String, Object> body) {
-        String status = Optional.ofNullable((String) body.get("status")).orElse("").trim();
-        if (status.isBlank()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new HashMap<>(Map.of("error", "status required")));
-        }
-        return repo.findById(id).map(m -> {
-            m.setStatus(status);
-            repo.save(m);
-            Map<String, Object> r = new HashMap<>();
-            r.put("ok", Boolean.TRUE);
-            return ResponseEntity.ok(r);
-        }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(new HashMap<>(Map.of("error", "not found"))));
-    }
-    @PutMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> updateMeta(@PathVariable("id") Long id,
-                                                          @RequestBody Map<String, Object> body) {
-        return repo.findById(id).map(m -> {
+        TuningModel m = target.get();
+        {
+            String newName = Optional.ofNullable((String) body.get("name")).orElse("").trim();
+            if (!newName.isBlank()) {
+                if (repo.findByNameIgnoreCase(newName).isPresent()) {
+                    return ResponseEntity.status(HttpStatus.CONFLICT).body(new HashMap<>(Map.of("error", "name exists")));
+                }
+                m.setName(newName);
+            }
+            if (body.containsKey("status")) {
+                String s = Optional.ofNullable((String) body.get("status")).orElse("").trim();
+                if (!s.isBlank()) m.setStatus(s);
+            }
             if (body.containsKey("meta")) {
                 try {
                     Object metaObj = body.get("meta");
@@ -191,16 +139,47 @@ public class TuningModelController {
                     }
                 } catch (Exception ignored) {}
             }
-            if (body.containsKey("status")) {
-                String s = Optional.ofNullable((String) body.get("status")).orElse("").trim();
-                if (!s.isBlank()) m.setStatus(s);
+            if (body.containsKey("remark")) {
+                String rm = Optional.ofNullable((String) body.get("remark")).orElse(null);
+                m.setRemark(rm);
             }
             repo.save(m);
             Map<String, Object> r = new HashMap<>();
             r.put("ok", Boolean.TRUE);
             r.put("id", m.getId());
+            r.put("name", m.getName());
             r.put("status", m.getStatus());
+            r.put("remark", m.getRemark());
             return ResponseEntity.ok(r);
-        }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(new HashMap<>(Map.of("error", "not found"))));
+        }
+    }
+
+    @PutMapping("/{idOrName}/status")
+    public ResponseEntity<Map<String, Object>> updateStatus(@PathVariable("idOrName") String idOrName,
+                                                            @RequestBody Map<String, Object> body) {
+        Optional<TuningModel> target;
+        try {
+            Long id = Long.parseLong(idOrName);
+            target = repo.findById(id);
+        } catch (NumberFormatException e) {
+            target = repo.findByNameIgnoreCase(idOrName);
+        }
+        String status = Optional.ofNullable((String) body.get("status")).orElse("").trim();
+        if (status.isBlank()) {
+            Map<String, Object> r = new HashMap<>();
+            r.put("error", "status required");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(r);
+        }
+        if (target.isEmpty()) {
+            Map<String, Object> r = new HashMap<>();
+            r.put("error", "not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(r);
+        }
+        TuningModel m = target.get();
+        m.setStatus(status);
+        repo.save(m);
+        Map<String, Object> r = new HashMap<>();
+        r.put("ok", Boolean.TRUE);
+        return ResponseEntity.ok(r);
     }
 }

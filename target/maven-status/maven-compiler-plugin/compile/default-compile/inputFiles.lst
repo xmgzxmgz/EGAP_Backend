@@ -26,5 +26,6 @@
 /Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/controller/DbProbeController.java
 /Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/config/MetricsFilter.java
 /Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/controller/TagRelationsController.java
+/Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/controller/DualItemTagsController.java
 /Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/repo/EnterpriseTagRepository.java
 /Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/controller/PolicyController.java

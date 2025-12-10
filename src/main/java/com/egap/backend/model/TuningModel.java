@@ -25,6 +25,9 @@ public class TuningModel {
     @Column
     private String status = "archived";
 
+    @Column
+    private String remark;
+
     @Column(columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
     private Map<String, Object> meta;
@@ -34,11 +37,13 @@ public class TuningModel {
     public String getCreator() { return creator; }
     public Instant getCreatedAt() { return createdAt; }
     public String getStatus() { return status; }
+    public String getRemark() { return remark; }
     public Map<String, Object> getMeta() { return meta; }
 
     public void setName(String name) { this.name = name; }
     public void setCreator(String creator) { this.creator = creator; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
     public void setStatus(String status) { this.status = status; }
+    public void setRemark(String remark) { this.remark = remark; }
     public void setMeta(Map<String, Object> meta) { this.meta = meta; }
 }
