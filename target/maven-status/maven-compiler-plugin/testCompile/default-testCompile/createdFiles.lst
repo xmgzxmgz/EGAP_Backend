@@ -1,1 +1,3 @@
 com/egap/backend/ApiIntegrationTest.class
+com/egap/backend/DualItemTagsControllerTest.class
+com/egap/backend/DualUseItemsCacheControllerTest.class
