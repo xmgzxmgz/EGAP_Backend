@@ -46,38 +46,81 @@ public class EtpsDataController {
                     String.class
             );
             String[] specs = new String[]{
-                    "Regulatory Authority",
-                    "Registration Location",
-                    "Registered Capital (10k CNY)",
-                    "Paid-in Capital (10k CNY)",
-                    "Legal Person Risk",
-                    "Enterprise Type (Nature)",
-                    "Current Year Import/Export Amount (10k CNY)",
-                    "Past Three Years Import/Export Amount (10k CNY)",
-                    "Current Year Import/Export Growth Rate",
-                    "Current Year Tax Amount (10k CNY)",
-                    "Past Three Years Tax Amount (10k CNY)",
-                    "Supervision_Current Year Import/Export Amount (10k CNY)",
-                    "Supervision_Past Three Years Import/Export Amount (10k CNY)",
-                    "Supervision_Current Year Import/Export Growth Rate",
-                    "Settlement Exchange Rate",
-                    "Current Year Customs Enforcement Count",
-                    "Previous Year Customs Enforcement Count",
-                    "Current Year Anomaly Count",
-                    "Past Three Years Anomaly Count",
-                    "Customs Broker",
-                    "Consignee Enterprise",
-                    "Number of Associated Enterprises",
-                    "Enterprise Type (Industry)",
-                    "Industry Category",
-                    "Specialized, Refined, Unique, New"
+                    "trade_co",
+                    "uniscid",
+                    "etps_name",
+                    "industry_phy_name",
+                    "industry_code_name",
+                    "area_id",
+                    "reg_prov_name",
+                    "reg_city_name",
+                    "etps_estb_year",
+                    "corp_type",
+                    "staff_scale",
+                    "aeo_level",
+                    "busi_type",
+                    "break_law_datetime1",
+                    "break_law_datetime2",
+                    "inspect_datetime",
+                    "is_direct_metal_firm",
+                    "is_shadow_firm",
+                    "is_risk_word_export_firm",
+                    "has_dual_use_license",
+                    "is_network_firm",
+                    "is_manual_chk_metal",
+                    "is_scope_metal_firm",
+                    "sm_export_entry_cnt_3y",
+                    "sm_export_value_3y",
+                    "sm_export_dest_country_cnt_3y",
+                    "shadow_export_entry_cnt_3y",
+                    "shadow_export_value_3y",
+                    "all_export_entry_cnt_3y",
+                    "all_export_value_3y",
+                    "sm_export_value_ratio_all_3y",
+                    "sm_export_entry_ratio_all_3y",
+                    "shadow_export_value_ratio_all_3y",
+                    "sm_unit_price_avg_3y",
+                    "sm_value_density_avg_3y",
+                    "shadow_unit_price_avg_3y",
+                    "sm_vs_shadow_unit_price_ratio",
+                    "sm_air_ratio_3y",
+                    "sm_sensitive_dest_ratio_3y",
+                    "sm_trade_months_active_3y",
+                    "sm_trade_duration_months_3y",
+                    "sm_avg_monthly_entry_cnt_3y",
+                    "sm_monthly_entry_std_3y",
+                    "sm_entry_cnt_12m",
+                    "sm_entry_cnt_6m",
+                    "sm_value_12m",
+                    "sm_value_6m",
+                    "sm_value_growth_6m_vs_prev_6m",
+                    "shadow_entry_cnt_12m",
+                    "shadow_value_12m",
+                    "owner_cnt_3y",
+                    "agent_cnt_3y",
+                    "oversea_buyer_cnt_3y",
+                    "sm_oversea_buyer_cnt_3y",
+                    "sm_oversea_buyer_ratio_3y",
+                    "audit_case_cnt_3y",
+                    "audit_smuggling_flag",
+                    "seized_case_cnt_3y",
+                    "seized_entry_ratio_3y",
+                    "sm_seized_case_cnt_3y",
+                    "post_policy_seized_cnt_1p5y",
+                    "dual_use_license_flag",
+                    "dual_use_license_cnt_3y",
+                    "dual_use_license_sm_ratio_3y",
+                    "dual_use_license_sensitive_dest_ratio",
+                    "dual_use_license_post_policy_cnt"
             };
 
             List<String> selectParts = new java.util.ArrayList<>();
-            selectParts.add("item_id");
+            selectParts.add("trade_co");
             for (String col : specs) {
                 if (present.contains(col)) {
-                    selectParts.add("\"" + col + "\" AS \"" + col + "\"");
+                    if (!"trade_co".equals(col)) {
+                        selectParts.add(col);
+                    }
                 }
             }
 
@@ -86,14 +129,22 @@ public class EtpsDataController {
             List<String> likeColumns = new java.util.ArrayList<>();
             if (q != null && !q.isBlank()) {
                 String like = "%" + q.toLowerCase() + "%";
-                if (present.contains("Consignee Enterprise")) likeColumns.add("lower(\"Consignee Enterprise\") LIKE ?");
-                if (present.contains("Registration Location")) likeColumns.add("lower(\"Registration Location\") LIKE ?");
-                if (present.contains("Industry Category")) likeColumns.add("lower(\"Industry Category\") LIKE ?");
+                if (present.contains("etps_name")) likeColumns.add("lower(etps_name) LIKE ?");
+                if (present.contains("trade_co")) likeColumns.add("lower(trade_co) LIKE ?");
+                if (present.contains("uniscid")) likeColumns.add("lower(uniscid) LIKE ?");
+                if (present.contains("reg_prov_name")) likeColumns.add("lower(reg_prov_name) LIKE ?");
+                if (present.contains("reg_city_name")) likeColumns.add("lower(reg_city_name) LIKE ?");
                 for (int i = 0; i < likeColumns.size(); i++) params.add(like);
                 if (!likeColumns.isEmpty()) baseWhere = " WHERE " + String.join(" OR ", likeColumns);
             }
+            if (areaId != null && !areaId.isBlank() && present.contains("area_id")) {
+                String cond = "area_id::text = ?";
+                if (baseWhere.isEmpty()) baseWhere = " WHERE " + cond;
+                else baseWhere = baseWhere + " AND " + cond;
+                params.add(areaId);
+            }
 
-            String selectSql = "SELECT " + String.join(", ", selectParts) + " FROM dual_use_items" + baseWhere + " ORDER BY item_id LIMIT ? OFFSET ?";
+            String selectSql = "SELECT " + String.join(", ", selectParts) + " FROM dual_use_items" + baseWhere + " ORDER BY trade_co LIMIT ? OFFSET ?";
             String countSql = "SELECT count(*) FROM dual_use_items" + baseWhere;
 
             long total = params.isEmpty()
@@ -108,15 +159,17 @@ public class EtpsDataController {
                     : jdbcTemplate.queryForList(selectSql, size, page * size);
             result.put("rows", rows);
             result.put("total", total);
-        } catch (Exception ignored) {
+        } catch (Exception e) {
             result.put("rows", List.of());
             result.put("total", 0);
+            result.put("error", String.valueOf(e.getMessage()));
         }
         return result;
-        } catch (Exception ignored) {
+        } catch (Exception e) {
             Map<String, Object> result = new HashMap<>();
             result.put("rows", List.of());
             result.put("total", 0);
+            result.put("error", String.valueOf(e.getMessage()));
             return result;
         }
     }
@@ -130,38 +183,81 @@ public class EtpsDataController {
                     String.class
             );
             String[] specs = new String[]{
-                    "Regulatory Authority",
-                    "Registration Location",
-                    "Registered Capital (10k CNY)",
-                    "Paid-in Capital (10k CNY)",
-                    "Legal Person Risk",
-                    "Enterprise Type (Nature)",
-                    "Current Year Import/Export Amount (10k CNY)",
-                    "Past Three Years Import/Export Amount (10k CNY)",
-                    "Current Year Import/Export Growth Rate",
-                    "Current Year Tax Amount (10k CNY)",
-                    "Past Three Years Tax Amount (10k CNY)",
-                    "Supervision_Current Year Import/Export Amount (10k CNY)",
-                    "Supervision_Past Three Years Import/Export Amount (10k CNY)",
-                    "Supervision_Current Year Import/Export Growth Rate",
-                    "Settlement Exchange Rate",
-                    "Current Year Customs Enforcement Count",
-                    "Previous Year Customs Enforcement Count",
-                    "Current Year Anomaly Count",
-                    "Past Three Years Anomaly Count",
-                    "Customs Broker",
-                    "Consignee Enterprise",
-                    "Number of Associated Enterprises",
-                    "Enterprise Type (Industry)",
-                    "Industry Category",
-                    "Specialized, Refined, Unique, New"
+                    "trade_co",
+                    "uniscid",
+                    "etps_name",
+                    "industry_phy_name",
+                    "industry_code_name",
+                    "area_id",
+                    "reg_prov_name",
+                    "reg_city_name",
+                    "etps_estb_year",
+                    "corp_type",
+                    "staff_scale",
+                    "aeo_level",
+                    "busi_type",
+                    "break_law_datetime1",
+                    "break_law_datetime2",
+                    "inspect_datetime",
+                    "is_direct_metal_firm",
+                    "is_shadow_firm",
+                    "is_risk_word_export_firm",
+                    "has_dual_use_license",
+                    "is_network_firm",
+                    "is_manual_chk_metal",
+                    "is_scope_metal_firm",
+                    "sm_export_entry_cnt_3y",
+                    "sm_export_value_3y",
+                    "sm_export_dest_country_cnt_3y",
+                    "shadow_export_entry_cnt_3y",
+                    "shadow_export_value_3y",
+                    "all_export_entry_cnt_3y",
+                    "all_export_value_3y",
+                    "sm_export_value_ratio_all_3y",
+                    "sm_export_entry_ratio_all_3y",
+                    "shadow_export_value_ratio_all_3y",
+                    "sm_unit_price_avg_3y",
+                    "sm_value_density_avg_3y",
+                    "shadow_unit_price_avg_3y",
+                    "sm_vs_shadow_unit_price_ratio",
+                    "sm_air_ratio_3y",
+                    "sm_sensitive_dest_ratio_3y",
+                    "sm_trade_months_active_3y",
+                    "sm_trade_duration_months_3y",
+                    "sm_avg_monthly_entry_cnt_3y",
+                    "sm_monthly_entry_std_3y",
+                    "sm_entry_cnt_12m",
+                    "sm_entry_cnt_6m",
+                    "sm_value_12m",
+                    "sm_value_6m",
+                    "sm_value_growth_6m_vs_prev_6m",
+                    "shadow_entry_cnt_12m",
+                    "shadow_value_12m",
+                    "owner_cnt_3y",
+                    "agent_cnt_3y",
+                    "oversea_buyer_cnt_3y",
+                    "sm_oversea_buyer_cnt_3y",
+                    "sm_oversea_buyer_ratio_3y",
+                    "audit_case_cnt_3y",
+                    "audit_smuggling_flag",
+                    "seized_case_cnt_3y",
+                    "seized_entry_ratio_3y",
+                    "sm_seized_case_cnt_3y",
+                    "post_policy_seized_cnt_1p5y",
+                    "dual_use_license_flag",
+                    "dual_use_license_cnt_3y",
+                    "dual_use_license_sm_ratio_3y",
+                    "dual_use_license_sensitive_dest_ratio",
+                    "dual_use_license_post_policy_cnt"
             };
 
             List<String> selectParts = new java.util.ArrayList<>();
-            selectParts.add("item_id");
+            selectParts.add("trade_co");
             for (String col : specs) {
                 if (present.contains(col)) {
-                    selectParts.add("\"" + col + "\" AS \"" + col + "\"");
+                    if (!"trade_co".equals(col)) {
+                        selectParts.add(col);
+                    }
                 }
             }
 
@@ -170,14 +266,16 @@ public class EtpsDataController {
             List<String> likeColumns = new java.util.ArrayList<>();
             if (q != null && !q.isBlank()) {
                 String like = "%" + q.toLowerCase() + "%";
-                if (present.contains("Consignee Enterprise")) likeColumns.add("lower(\"Consignee Enterprise\") LIKE ?");
-                if (present.contains("Registration Location")) likeColumns.add("lower(\"Registration Location\") LIKE ?");
-                if (present.contains("Industry Category")) likeColumns.add("lower(\"Industry Category\") LIKE ?");
+                if (present.contains("etps_name")) likeColumns.add("lower(etps_name) LIKE ?");
+                if (present.contains("trade_co")) likeColumns.add("lower(trade_co) LIKE ?");
+                if (present.contains("uniscid")) likeColumns.add("lower(uniscid) LIKE ?");
+                if (present.contains("reg_prov_name")) likeColumns.add("lower(reg_prov_name) LIKE ?");
+                if (present.contains("reg_city_name")) likeColumns.add("lower(reg_city_name) LIKE ?");
                 for (int i = 0; i < likeColumns.size(); i++) params.add(like);
                 if (!likeColumns.isEmpty()) baseWhere = " WHERE " + String.join(" OR ", likeColumns);
             }
 
-            String selectSql = "SELECT " + String.join(", ", selectParts) + " FROM dual_use_items" + baseWhere + " ORDER BY item_id LIMIT ? OFFSET ?";
+            String selectSql = "SELECT " + String.join(", ", selectParts) + " FROM dual_use_items" + baseWhere + " ORDER BY trade_co LIMIT ? OFFSET ?";
             long total = params.isEmpty()
                     ? jdbcTemplate.queryForObject("SELECT count(*) FROM dual_use_items" + baseWhere, Long.class)
                     : jdbcTemplate.queryForObject("SELECT count(*) FROM dual_use_items" + baseWhere, params.toArray(), Long.class);

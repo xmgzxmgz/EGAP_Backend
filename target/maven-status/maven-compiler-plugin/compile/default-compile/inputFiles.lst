@@ -17,7 +17,6 @@
 /Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/controller/DualUseItemsCacheController.java
 /Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/config/GlobalExceptionHandler.java
 /Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/controller/SearchController.java
-/Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/controller/DualUseTunedController.java
 /Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/controller/TagController.java
 /Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/controller/TagsController.java
 /Users/xiamuguizhi/code/EGAP_Backend/src/main/java/com/egap/backend/model/DualUseItem.java

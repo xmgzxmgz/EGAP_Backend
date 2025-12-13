@@ -7,9 +7,8 @@ import java.math.BigDecimal;
 @Table(name = "dual_use_items")
 public class DualUseItem {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "item_id")
-    private Integer itemId;
+    @Column(name = "trade_co")
+    private String tradeCo;
 
     @Column(name = "\"Regulatory Authority\"")
     private String regulatoryAuthority;
@@ -83,7 +82,7 @@ public class DualUseItem {
     @Column(name = "\"Past Three Years Anomaly Count\"")
     private Integer pastThreeYearsAnomalyCount;
 
-    public Integer getItemId() { return itemId; }
+    public String getTradeCo() { return tradeCo; }
     public String getRegulatoryAuthority() { return regulatoryAuthority; }
     public String getRegistrationLocation() { return registrationLocation; }
     public String getEnterpriseTypeNature() { return enterpriseTypeNature; }

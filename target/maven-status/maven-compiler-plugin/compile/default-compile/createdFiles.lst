@@ -10,7 +10,6 @@ com/egap/backend/controller/HealthController.class
 com/egap/backend/config/TuningModelSchemaInit.class
 com/egap/backend/config/GlobalExceptionHandler.class
 com/egap/backend/controller/TuningModelController.class
-com/egap/backend/controller/DualUseTunedController.class
 com/egap/backend/repo/EnterpriseTagRepository.class
 com/egap/backend/controller/EnterpriseController.class
 com/egap/backend/EgapBackendApplication.class
