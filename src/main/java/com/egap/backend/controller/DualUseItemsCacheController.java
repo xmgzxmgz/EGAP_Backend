@@ -23,6 +23,8 @@ public class DualUseItemsCacheController {
     public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body) {
         try {
             Number tsNum = (Number) body.get("timestamp");
+            Boolean boost = null;
+            try { boost = (Boolean) body.get("boost"); } catch (Exception ignored) {}
             List<Map<String, Object>> rows = castRows(body.get("rows"));
             List<String> columnsArg = castColumns(body.get("columns"));
             List<List<Object>> values = castValues(body.get("values"));
@@ -35,7 +37,7 @@ public class DualUseItemsCacheController {
 
             jdbc.execute("create schema if not exists dual_use_items_cache");
 
-            String base = "dual_use_items_" + tsNum.longValue();
+            String base = "dual_use_items_" + tsNum.longValue() + ((boost != null && boost) ? "_boost" : "");
             String table = ensureUniqueTableName(base);
 
             List<String> inferredCols = deriveColumns(hasRows ? rows : Collections.emptyList(), columnsArg);
