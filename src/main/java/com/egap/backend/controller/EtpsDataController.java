@@ -35,16 +35,39 @@ public class EtpsDataController {
     public Map<String, Object> getEtpsData(@RequestParam(value = "page", defaultValue = "0") int page,
                                            @RequestParam(value = "size", defaultValue = "20") int size,
                                            @RequestParam(value = "q", required = false) String q,
-                                           @RequestParam(value = "areaId", required = false) String areaId) {
+                                           @RequestParam(value = "areaId", required = false) String areaId,
+                                           @RequestParam(value = "table", required = false) String table) {
         try {
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.max(size, 1));
 
         Map<String, Object> result = new HashMap<>();
         try {
+            String effectiveSchema = "public";
+            String effectiveTable = "dual_use_items";
+            if (table != null && !table.isBlank()) {
+                String t = table.trim();
+                if (!t.matches("^dual_use_items_\\d+(?:_boost)?(?:_[a-z0-9]{4})?$")) {
+                    result.put("rows", List.of());
+                    result.put("total", 0);
+                    result.put("error", "invalid table");
+                    return result;
+                }
+                effectiveSchema = "dual_use_items_cache";
+                effectiveTable = t;
+            }
+
             List<String> present = jdbcTemplate.queryForList(
-                    "SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='dual_use_items'",
-                    String.class
+                    "SELECT column_name FROM information_schema.columns WHERE table_schema=? AND table_name=?",
+                    String.class,
+                    effectiveSchema,
+                    effectiveTable
             );
+            if (present.isEmpty()) {
+                result.put("rows", List.of());
+                result.put("total", 0);
+                result.put("error", "table not found");
+                return result;
+            }
             String[] specs = new String[]{
                     "trade_co",
                     "uniscid",
@@ -144,8 +167,9 @@ public class EtpsDataController {
                 params.add(areaId);
             }
 
-            String selectSql = "SELECT " + String.join(", ", selectParts) + " FROM dual_use_items" + baseWhere + " ORDER BY trade_co LIMIT ? OFFSET ?";
-            String countSql = "SELECT count(*) FROM dual_use_items" + baseWhere;
+            String tableRef = "public".equals(effectiveSchema) ? effectiveTable : (effectiveSchema + "." + effectiveTable);
+            String selectSql = "SELECT " + String.join(", ", selectParts) + " FROM " + tableRef + baseWhere + " ORDER BY trade_co LIMIT ? OFFSET ?";
+            String countSql = "SELECT count(*) FROM " + tableRef + baseWhere;
 
             long total = params.isEmpty()
                     ? jdbcTemplate.queryForObject(countSql, Long.class)
@@ -175,13 +199,36 @@ public class EtpsDataController {
     }
 
     @GetMapping("/dual_use_items/all")
-    public Map<String, Object> getAllEtpsData(@RequestParam(value = "q", required = false) String q) {
+    public Map<String, Object> getAllEtpsData(@RequestParam(value = "q", required = false) String q,
+                                              @RequestParam(value = "table", required = false) String table) {
         Map<String, Object> result = new HashMap<>();
         try {
+            String effectiveSchema = "public";
+            String effectiveTable = "dual_use_items";
+            if (table != null && !table.isBlank()) {
+                String t = table.trim();
+                if (!t.matches("^dual_use_items_\\d+(?:_boost)?(?:_[a-z0-9]{4})?$")) {
+                    result.put("rows", List.of());
+                    result.put("total", 0);
+                    result.put("error", "invalid table");
+                    return result;
+                }
+                effectiveSchema = "dual_use_items_cache";
+                effectiveTable = t;
+            }
+
             List<String> present = jdbcTemplate.queryForList(
-                    "SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='dual_use_items'",
-                    String.class
+                    "SELECT column_name FROM information_schema.columns WHERE table_schema=? AND table_name=?",
+                    String.class,
+                    effectiveSchema,
+                    effectiveTable
             );
+            if (present.isEmpty()) {
+                result.put("rows", List.of());
+                result.put("total", 0);
+                result.put("error", "table not found");
+                return result;
+            }
             String[] specs = new String[]{
                     "trade_co",
                     "uniscid",
@@ -275,10 +322,11 @@ public class EtpsDataController {
                 if (!likeColumns.isEmpty()) baseWhere = " WHERE " + String.join(" OR ", likeColumns);
             }
 
-            String selectSql = "SELECT " + String.join(", ", selectParts) + " FROM dual_use_items" + baseWhere + " ORDER BY trade_co LIMIT ? OFFSET ?";
+            String tableRef = "public".equals(effectiveSchema) ? effectiveTable : (effectiveSchema + "." + effectiveTable);
+            String selectSql = "SELECT " + String.join(", ", selectParts) + " FROM " + tableRef + baseWhere + " ORDER BY trade_co LIMIT ? OFFSET ?";
             long total = params.isEmpty()
-                    ? jdbcTemplate.queryForObject("SELECT count(*) FROM dual_use_items" + baseWhere, Long.class)
-                    : jdbcTemplate.queryForObject("SELECT count(*) FROM dual_use_items" + baseWhere, params.toArray(), Long.class);
+                    ? jdbcTemplate.queryForObject("SELECT count(*) FROM " + tableRef + baseWhere, Long.class)
+                    : jdbcTemplate.queryForObject("SELECT count(*) FROM " + tableRef + baseWhere, params.toArray(), Long.class);
 
             int batch = 1000;
             int offset = 0;

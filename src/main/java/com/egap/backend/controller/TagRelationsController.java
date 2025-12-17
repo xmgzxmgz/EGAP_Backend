@@ -28,12 +28,16 @@ public class TagRelationsController {
         }
         int affected = 0;
         for (Map<String, Object> rel : relations) {
-            Long itemId = rel.get("itemId") instanceof Number ? ((Number) rel.get("itemId")).longValue() : null;
-            String enterpriseName = Optional.ofNullable((String) rel.get("enterpriseName")).orElse(null);
+            String tradeCo = Optional.ofNullable((String) rel.get("tradeCo")).orElse(null);
+            if ((tradeCo == null || tradeCo.isBlank()) && rel.get("itemId") != null) {
+                Object itemIdRaw = rel.get("itemId");
+                tradeCo = String.valueOf(itemIdRaw);
+            }
+            String etpsName = Optional.ofNullable((String) rel.get("etpsName"))
+                    .orElse(Optional.ofNullable((String) rel.get("enterpriseName")).orElse(null));
             Long modelId = rel.get("modelId") instanceof Number ? ((Number) rel.get("modelId")).longValue() : null;
             String modelName = Optional.ofNullable((String) rel.get("modelName")).orElse(null);
             String tag = Optional.ofNullable((String) rel.get("tag")).orElse(null);
-            Long tagId = rel.get("tagId") instanceof Number ? ((Number) rel.get("tagId")).longValue() : null;
             Instant appliedAt;
             Object appliedAtRaw = rel.get("appliedAt");
             if (appliedAtRaw instanceof Instant) {
@@ -57,38 +61,16 @@ public class TagRelationsController {
             }
             String tagStatus = Optional.ofNullable((String) rel.get("tagStatus")).orElse("active");
             String projectStatus = Optional.ofNullable((String) rel.get("projectStatus")).orElse("archived");
-            if (itemId == null && enterpriseName != null && !enterpriseName.isBlank()) {
-                try {
-                    itemId = jdbc.queryForObject("select id from enterprise_info where lower(name)=lower(?) limit 1", Long.class, enterpriseName);
-                } catch (Exception ignored) {}
-            }
-            if (tagId == null && tag != null && !tag.isBlank()) {
-                try {
-                    tagId = jdbc.queryForObject("select id from tags where name = ? limit 1", Long.class, tag);
-                } catch (Exception ignored) {}
-            }
+            String tagCategory = Optional.ofNullable((String) rel.get("tagCategory"))
+                    .orElseGet(() -> rel.get("itemId") != null ? "dual_use_items" : "manual");
             long epochMs = appliedAt.toEpochMilli();
-            if (tagId == null && tag != null && !tag.isBlank()) {
-                try {
-                    Long inserted = jdbc.queryForObject(
-                            "insert into tags(name, created_at_ms) values(?, ?) on conflict(name) do nothing returning id",
-                            Long.class, tag, epochMs
-                    );
-                    if (inserted != null) tagId = inserted;
-                } catch (Exception ignored) {}
-                if (tagId == null) {
-                    try {
-                        tagId = jdbc.queryForObject("select id from tags where name = ? limit 1", Long.class, tag);
-                    } catch (Exception ignored) {}
-                }
-            }
-            if (itemId == null || tagId == null) continue;
+            if (tradeCo == null || tradeCo.isBlank() || tag == null || tag.isBlank()) continue;
             java.sql.Timestamp ts = java.sql.Timestamp.from(appliedAt);
             affected += jdbc.update(
-                    "insert into tag_relations(enterprise_id, item_id, enterprise_name, model_id, model_name, tag_id, tag, applied_at, applied_at_ms, tag_status, project_status) " +
-                            "values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
-                            "on conflict (enterprise_id, tag_id, applied_at_ms) do update set enterprise_name=excluded.enterprise_name, model_id=excluded.model_id, model_name=excluded.model_name, tag=excluded.tag, applied_at=excluded.applied_at, tag_status=excluded.tag_status, project_status=excluded.project_status",
-                    itemId, itemId, enterpriseName, modelId, modelName, tagId, tag, ts, epochMs, tagStatus, projectStatus
+                    "insert into tag_relations(trade_co, etps_name, model_id, model_name, tag, applied_at, tag_status, project_status, tag_category) " +
+                            "values(?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+                            "on conflict (trade_co, model_id, tag) do update set etps_name=excluded.etps_name, model_id=excluded.model_id, model_name=excluded.model_name, tag=excluded.tag, applied_at=excluded.applied_at, tag_status=excluded.tag_status, project_status=excluded.project_status, tag_category=excluded.tag_category",
+                    tradeCo, etpsName, modelId, modelName, tag, ts, tagStatus, projectStatus, tagCategory
             );
         }
         return Map.of("ok", Boolean.TRUE, "count", affected);
@@ -124,9 +106,14 @@ public class TagRelationsController {
 
     @GetMapping("")
     public ResponseEntity<Map<String, Object>> list(
-            @RequestParam(value = "enterpriseId", required = false) Long enterpriseId,
+            @RequestParam(value = "tradeCo", required = false) String tradeCo,
+            @RequestParam(value = "trade_co", required = false) String trade_co,
+            @RequestParam(value = "etpsName", required = false) String etpsName,
             @RequestParam(value = "enterpriseName", required = false) String enterpriseName,
             @RequestParam(value = "enterprise_name", required = false) String enterprise_name,
+            @RequestParam(value = "enterpriseId", required = false) String enterpriseId,
+            @RequestParam(value = "enterpriseid", required = false) String enterpriseid,
+            @RequestParam(value = "enterpriseld", required = false) String enterpriseld,
             @RequestParam(value = "page", required = false) Integer page,
             @RequestParam(value = "pageNo", required = false) Integer pageNo,
             @RequestParam(value = "size", required = false) Integer size,
@@ -138,18 +125,29 @@ public class TagRelationsController {
             @RequestParam(value = "modelName", required = false) String modelName,
             @RequestParam(value = "model_name", required = false) String model_name
     ) {
-        String ename = enterpriseName != null && !enterpriseName.isBlank() ? enterpriseName : enterprise_name;
+        String code = tradeCo != null && !tradeCo.isBlank() ? tradeCo : trade_co;
+        if (code == null || code.isBlank()) {
+            String eid = enterpriseId != null && !enterpriseId.isBlank()
+                    ? enterpriseId
+                    : (enterpriseid != null && !enterpriseid.isBlank() ? enterpriseid : enterpriseld);
+            if (eid != null && !eid.isBlank()) {
+                code = eid;
+            }
+        }
+        String ename = etpsName != null && !etpsName.isBlank()
+                ? etpsName
+                : (enterpriseName != null && !enterpriseName.isBlank() ? enterpriseName : enterprise_name);
         int p = page != null && page > 0 ? page : (pageNo != null && pageNo > 0 ? pageNo : 1);
         int s = size != null && size > 0 ? size : (page_size != null && page_size > 0 ? page_size : 20);
         s = Math.min(s, 200);
         int offset = (p - 1) * s;
         String where;
         List<Object> params = new ArrayList<>();
-        if (enterpriseId != null) {
-            where = " enterprise_id = ?";
-            params.add(enterpriseId);
+        if (code != null && !code.isBlank()) {
+            where = " trade_co = ?";
+            params.add(code);
         } else if (ename != null && !ename.isBlank()) {
-            where = " lower(enterprise_name) = lower(?)";
+            where = " lower(etps_name) = lower(?)";
             params.add(ename);
         } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "enterprise required"));
@@ -157,15 +155,15 @@ public class TagRelationsController {
         Long st = startTime != null ? startTime : start;
         Long et = endTime != null ? endTime : end;
         if (st != null && et != null) {
-            where += " and applied_at_ms between ? and ?";
-            params.add(st);
-            params.add(et);
+            where += " and applied_at between ? and ?";
+            params.add(java.sql.Timestamp.from(Instant.ofEpochMilli(st)));
+            params.add(java.sql.Timestamp.from(Instant.ofEpochMilli(et)));
         } else if (st != null) {
-            where += " and applied_at_ms >= ?";
-            params.add(st);
+            where += " and applied_at >= ?";
+            params.add(java.sql.Timestamp.from(Instant.ofEpochMilli(st)));
         } else if (et != null) {
-            where += " and applied_at_ms <= ?";
-            params.add(et);
+            where += " and applied_at <= ?";
+            params.add(java.sql.Timestamp.from(Instant.ofEpochMilli(et)));
         }
         String mname = modelName != null && !modelName.isBlank() ? modelName : model_name;
         if (mname != null && !mname.isBlank()) {
@@ -176,8 +174,8 @@ public class TagRelationsController {
         params.add(s);
         params.add(offset);
         List<Map<String, Object>> rows = jdbc.queryForList(
-                "select tr.id, tr.enterprise_id, tr.enterprise_name, tr.model_id, tr.model_name, coalesce(t.name, tr.tag) as tag, tr.applied_at_ms, tr.tag_status, tr.project_status " +
-                        "from tag_relations tr left join tags t on tr.tag_id = t.id where" + where + " order by tr.applied_at_ms desc limit ? offset ?",
+                "select tr.id, tr.trade_co, tr.etps_name, tr.model_id, tr.model_name, tr.tag, extract(epoch from tr.applied_at)*1000 as applied_at_ms, tr.tag_status, tr.project_status, tr.tag_category " +
+                        "from tag_relations tr where" + where + " order by tr.applied_at desc limit ? offset ?",
                 params.toArray()
         );
         Map<String, Object> body = new HashMap<>();
