@@ -19,8 +19,9 @@ class DualItemTagsControllerTest {
 
     @Test
     void createAndListArchived() throws Exception {
+        String name = "模型A_" + System.currentTimeMillis();
         String payload = "{\n" +
-                "  \"name\": \"模型A\",\n" +
+                "  \"name\": \"" + name + "\",\n" +
                 "  \"creator\": \"测试用户\",\n" +
                 "  \"createdAt\": 1733820000000,\n" +
                 "  \"status\": \"archived\",\n" +
@@ -31,7 +32,7 @@ class DualItemTagsControllerTest {
                         .content(payload))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.name").value("模型A"))
+                .andExpect(jsonPath("$.name").value(name))
                 .andExpect(jsonPath("$.status").value("archived"))
                 .andExpect(jsonPath("$.remark").value("备注内容"));
 
@@ -40,4 +41,3 @@ class DualItemTagsControllerTest {
                 .andExpect(jsonPath("$.rows").isArray());
     }
 }
-
